@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agente Financeiro Inteligente</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://s3.tradingview.com/tv.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
+    .token-card { background: #222; border: 1px solid #444; border-radius: 8px; padding: 15px; margin: 15px 0; }
+    .trend-up { color: #0f0; }
+    .trend-down { color: #f33; }
+    .info-icon { cursor: pointer; color: #0af; margin-left: 5px; }
+    input, button { padding: 8px; margin: 5px 0; border-radius: 5px; border: none; }
+    button { background: #0af; color: #fff; cursor: pointer; }
+    #chart-container { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Agente Financeiro Inteligente</h1>
+  <input type="text" id="searchInput" placeholder="Buscar ativo (ex: bitcoin, ethereum)" />
+  <button onclick="buscarAtivo()">🔍 Buscar</button>
+  <div id="dashboard"></div>
+  <div id="chart-container"></div>
+
+  <script>
+    async function getPrice(token) {
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`);
+      const data = await res.json();
+      return data[token]?.usd || 'N/A';
+    }
+
+    async function renderToken(token) {
+      const price = await getPrice(token);
+      const card = document.createElement('div');
+      card.className = 'token-card';
+      card.innerHTML = `
+        <h2>${token.toUpperCase()}</h2>
+        <p>Preço atual: <strong>$${price}</strong></p>
+        <p>Tendência: <span class="trend-up">Alta</span></p>
+        <p>RSI: 72 <span class="info-icon" onclick="mostrarExplicacao('RSI')">ℹ️</span></p>
+        <p>MACD: Cruzamento positivo <span class="info-icon" onclick="mostrarExplicacao('MACD')">ℹ️</span></p>
+        <p>Volume: +35% <span class="info-icon" onclick="mostrarExplicacao('Volume')">ℹ️</span></p>
+        <button onclick="abrirGrafico('${token}')">📈 Ver Gráfico</button>
+        <button onclick="configurarAlerta('${token}')">🔔 Criar Alerta</button>
+      `;
+      document.getElementById('dashboard').appendChild(card);
+    }
+
+    function abrirGrafico(token) {
+      document.getElementById('chart-container').innerHTML = "";
+      const chartDiv = document.createElement('div');
+      chartDiv.id = "tv-chart";
+      chartDiv.style = "height: 600px;";
+      document.getElementById('chart-container').appendChild(chartDiv);
+
+      new TradingView.widget({
+        "container_id": "tv-chart",
+        "width": "100%",
+        "height": "600",
+        "symbol": `BINANCE:${token.toUpperCase()}USDT`,
+        "interval": "60",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "br",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "hide_side_toolbar": false,
+        "allow_symbol_change": true
+      });
+    }
+
+    function mostrarExplicacao(indicador) {
+      const explicacoes = {
+        RSI: "RSI (Índice de Força Relativa) mede a velocidade e mudança dos movimentos de preço. Acima de 70 indica sobrecompra, abaixo de 30 indica sobrevenda.",
+        MACD: "MACD (Convergência/Divergência de Médias Móveis) mostra mudanças na força, direção e duração de uma tendência.",
+        Volume: "Volume anormal pode indicar entrada ou saída de grandes players (Smart Money)."
+      };
+      alert(explicacoes[indicador]);
+    }
+
+    function buscarAtivo() {
+      const token = document.getElementById('searchInput').value.toLowerCase();
+      if (token) {
+        renderToken(token);
+      }
+    }
+
+    function configurarAlerta(token) {
+      alert(`Em breve: alertas por Telegram/WhatsApp/Discord para ${token.toUpperCase()}`);
+    }
+
+    // Ativos padrão
+    ['bitcoin', 'ethereum', 'solana', 'aave', 'near', 'sui'].forEach(renderToken);
+  </script>
+</body>
+</html>
